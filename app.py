@@ -6,6 +6,9 @@ import googleapiclient.discovery
 
 API_SERVICE = 'youtube'
 API_VERSION = 'v3'
+
+YOUTUBE_SSL = ['https://www.googleapis.com/auth/youtube.force-ssl']
+
 VIDEO_ID = 'lqZinLXwxPo'
 CLIENT_SECRET_NAME = 'client_secret.json'
 
@@ -24,12 +27,28 @@ def getClientSecretPath(filename):
     return path
 
 
-@app.route('/')
-def run():
-    client_secret = getClientSecretPath(CLIENT_SECRET_NAME)
-    print(client_secret)
+def authenticate(client_secret):
+    googleFlow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(client_secret, YOUTUBE_SSL)
+    googleFlow.redirect_uri = flask.url_for('callback', _external=True)
+    authorization_url, state = googleFlow.authorization_url(access_type='offline', include_granted_scopes='true')
+    return authorization_url
 
-    return 'ACCEPTED'
+
+@app.route('/callback')
+def callback():
+    print(request.args.get('state'))
+    return 's'
+
+
+@app.route('/')
+def main():
+    client_secret = getClientSecretPath(CLIENT_SECRET_NAME)
+    if not client_secret:
+        print('client secret not found')
+    print(client_secret)
+    authorization_url = authenticate(client_secret)
+
+    return flask.redirect(authorization_url)
 
 
 if __name__ == '__main__':
