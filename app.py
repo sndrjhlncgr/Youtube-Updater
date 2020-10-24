@@ -2,6 +2,7 @@ import flask, os, json
 from flask import Flask, request, session
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
+import google
 
 API_SERVICE = 'youtube'
 API_VERSION = 'v3'
@@ -47,6 +48,22 @@ def storeCredentials(credentials):
     flask.session['credentials'] = json.dumps(get_credentials)
 
 
+def getCredentials(credentials):
+    get_credentials = {
+        'token': credentials.token,
+        'refresh_token': credentials.refresh_token,
+        'id_token': credentials.id_token,
+        'token_uri': credentials.token_uri,
+        'client_id': credentials.client_id,
+        'client_secret': credentials.client_secret,
+        'scopes': credentials.scopes,
+        'quota_project_id': credentials.quota_project_id
+
+    }
+
+    return get_credentials
+
+
 def authenticate(client_secret):
     googleFlow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(client_secret, YOUTUBE_SSL)
     googleFlow.redirect_uri = flask.url_for('callback', _external=True)
@@ -79,11 +96,35 @@ def callback():
     # Raises: ValueError – If there is no access token in the session.
 
     print(flask.session['credentials'])
-    return 'CREDENTIALS STORED'
+    return flask.redirect('/title/update')
 
 
-@app.route('/')
-def main():
+@app.route('/title/update')
+def titleUpdate():
+    credentials = json.loads(flask.session['credentials'])
+    credential = google.oauth2.credentials.Credentials(**credentials)
+    youtube = googleapiclient.discovery.build(API_SERVICE, API_VERSION, credentials=credential)
+
+    requests = youtube.videos().update(
+        part="snippet",
+        body={
+            "id": VIDEO_ID,
+            "snippet": {
+                "categoryId": 10,
+                "defaultLanguage": "en",
+                "title": "Music Taste",
+                "description": 'test',
+                "tags": 'test'
+            },
+        })
+
+    response = requests.execute()
+    print(response)
+    return 'YOUTUBE TITLE UPDATED'
+
+
+@app.route('/auth')
+def auth():
     client_secret = getClientSecretPath(CLIENT_SECRET_NAME)
     if not client_secret:
         return None
@@ -91,6 +132,12 @@ def main():
     authorization_url = authenticate(client_secret)
 
     return flask.redirect(authorization_url)
+
+
+@app.route('/')
+def main():
+    print('APP STARTED')
+    return 'd'
 
 
 if __name__ == '__main__':
