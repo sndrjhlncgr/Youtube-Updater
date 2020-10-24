@@ -48,22 +48,6 @@ def storeCredentials(credentials):
     flask.session['credentials'] = json.dumps(get_credentials)
 
 
-def getCredentials(credentials):
-    get_credentials = {
-        'token': credentials.token,
-        'refresh_token': credentials.refresh_token,
-        'id_token': credentials.id_token,
-        'token_uri': credentials.token_uri,
-        'client_id': credentials.client_id,
-        'client_secret': credentials.client_secret,
-        'scopes': credentials.scopes,
-        'quota_project_id': credentials.quota_project_id
-
-    }
-
-    return get_credentials
-
-
 def authenticate(client_secret):
     googleFlow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(client_secret, YOUTUBE_SSL)
     googleFlow.redirect_uri = flask.url_for('callback', _external=True)
