@@ -1,3 +1,5 @@
+import sys
+
 import flask, os, json
 from flask import Flask, request, session
 import google_auth_oauthlib.flow
@@ -10,7 +12,7 @@ API_VERSION = 'v3'
 YOUTUBE_SSL = ['https://www.googleapis.com/auth/youtube.force-ssl']
 
 VIDEO_ID = 'lqZinLXwxPo'  # this video u want to update
-CLIENT_SECRET_NAME = 'client_secret.json'  # client_secret coming from google api
+CLIENT_SECRET = 'client_secret.json'  # client_secret coming from google api
 
 app = Flask(__name__)
 app.secret_key = 'sandrocagara'  # this is for creating session
@@ -25,10 +27,10 @@ def getBuildApiService(credentials):
 
 def getClientSecretPath(filename):
     try:
-        file = open(filename)
+        file = open('clients/'+filename)
         path = os.path.realpath(file.name)
         file.close()
-    except FileNotFoundError as e:
+    except sys.exc_info()[0] as e:
         print('Error Message: ', e)
         return None
     return path
@@ -70,41 +72,46 @@ def getVideoStatistics(credentials):
 def getVideoTitleWithViews(credentials):
     videoInfo = getVideoStatistics(credentials)
     # print(videoInfo["items"][0]["statistics"])
-    title = "Music Taste has " + str(videoInfo["items"][0]["statistics"]["viewCount"]) + " Views for this video."
+    title = "Music Taste has {} Views for this video.".format(str(videoInfo["items"][0]["statistics"]["viewCount"]))
     return title
 
 
 @app.route('/title/update')
 def titleUpdate():
-    credentials = json.loads(flask.session['credentials'])
-    credential = google.oauth2.credentials.Credentials(**credentials)
-    youtube = getBuildApiService(credential)
-    title = getVideoTitleWithViews(credential)
-    requests = youtube.videos().update(
-        part="snippet",
-        body={
-            "id": VIDEO_ID,
-            "snippet": {
-                "categoryId": 10,
-                "defaultLanguage": "en",
-                "title": "Music Taste",
-                "description": """
-                    Upload Playlist: https://bit.ly/392sDEP
-8D Audio Playlist: https://bit.ly/2vwtuQ2
-Danucd: https://bit.ly/37Seyta
-Old but Gold Playlist: https://bit.ly/3dHQqfp
-Hours Music Playlist: https://bit.ly/2Z0U1RJ
-Subscriber Requested Music: https://bit.ly/3bsQga7
+    try:
+        credentials = json.loads(flask.session['credentials'])
+        credential = google.oauth2.credentials.Credentials(**credentials)
+        youtube = getBuildApiService(credential)
+        title = getVideoTitleWithViews(credential)
 
-If you need a song removed on my channel, please e-mail me.
+        requests = youtube.videos().update(
+            part="snippet",
+            body={
+                "id": VIDEO_ID,
+                "snippet": {
+                    "categoryId": 10,
+                    "defaultLanguage": "en",
+                    "title": "Music Taste",
+                    "description": """
+                             Upload Playlist: https://bit.ly/392sDEP
+         8D Audio Playlist: https://bit.ly/2vwtuQ2
+         Danucd: https://bit.ly/37Seyta
+         Old but Gold Playlist: https://bit.ly/3dHQqfp
+         Hours Music Playlist: https://bit.ly/2Z0U1RJ
+         Subscriber Requested Music: https://bit.ly/3bsQga7
 
-WARNING: These videos may cause people with photosensitive epilepsy to convulse in seizures. Viewer discretion is advised.
-                """,
-            },
-        })
+         If you need a song removed on my channel, please e-mail me.
 
-    response = requests.execute()
-    print(response)
+         WARNING: These videos may cause people with photosensitive epilepsy to convulse in seizures. Viewer discretion is advised.
+                         """,
+                },
+            })
+
+        response = requests.execute()
+        print(response)
+    except sys.exc_info()[0] as e:
+        return "ERROR: " + str(e)
+
     return 'YOUTUBE TITLE UPDATED'
 
 
@@ -115,12 +122,8 @@ def callback():
     if not client_secret:
         return 'CREDENTIALS NOT STORED'
 
-    googleFlow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
-        client_secret,
-        scopes=YOUTUBE_SSL,
-        state=state)
+    googleFlow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(client_secret, scopes=YOUTUBE_SSL, state=state)
     googleFlow.redirect_uri = flask.url_for('callback', _external=True)  # where came from link
-
     response = flask.request.url
     googleFlow.fetch_token(authorization_response=response)
 
@@ -130,18 +133,17 @@ def callback():
     # Return type: https://google-auth.readthedocs.io/en/stable/reference/google.oauth2.credentials.html
     # Raises: ValueError – If there is no access token in the session.
     storeCredentials(credentials)
-    print(flask.session['credentials'])
+    # print(flask.session['credentials'])
     return flask.redirect('/title/update')
 
 
-@app.route('/auth')
+@app.route('/authenticate')
 def auth():
-    client_secret = getClientSecretPath(CLIENT_SECRET_NAME)
+    client_secret = getClientSecretPath(CLIENT_SECRET)
+    # print(client_secret)
     if not client_secret:
         return None
-    # print(client_secret)
     authorization_url = authenticate(client_secret)
-
     return flask.redirect(authorization_url)
 
 
