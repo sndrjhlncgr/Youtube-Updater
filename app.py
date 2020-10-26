@@ -17,11 +17,7 @@ CLIENT_SECRET = 'client_secret.json'  # client_secret coming from google api
 CLIENT_SECRET_WITH_TOKEN = 'client_secret_with_token.json'
 
 app = Flask(__name__)
-app.secret_key = 'sandrocagara'  # this is for creating session
-
-
-# The session is unavailable because no secret key was set.  Set the secret_key on the application to something
-# unique and secret.
+app.secret_key = 'sandrocagara'  # this is for creating flask session
 
 def getBuildApiService(credentials):
     return googleapiclient.discovery.build(API_SERVICE, API_VERSION, credentials=credentials)
