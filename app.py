@@ -13,11 +13,12 @@ API_VERSION = 'v3'
 YOUTUBE_SSL = ['https://www.googleapis.com/auth/youtube.force-ssl']
 
 VIDEO_ID = 'lqZinLXwxPo'  # this video u want to update
-CLIENT_SECRET = 'client_secret.json'  # client_secret coming from google api
-CLIENT_SECRET_WITH_TOKEN = 'client_secret_with_token.json'
+CLIENT_SECRET = 'client_secret.json'  # client_secret coming from google api rename to -> client_secret.json
+CLIENT_SECRET_WITH_TOKEN = 'client_secret_with_token.json'  # nothing to worry about this
 
 app = Flask(__name__)
 app.secret_key = 'sandrocagara'  # this is for creating flask session
+
 
 def getBuildApiService(credentials):
     return googleapiclient.discovery.build(API_SERVICE, API_VERSION, credentials=credentials)
