@@ -12,7 +12,7 @@ API_VERSION = 'v3'
 
 YOUTUBE_SSL = ['https://www.googleapis.com/auth/youtube.force-ssl']
 
-VIDEO_ID = 'lqZinLXwxPo'  # this video u want to update
+VIDEO_ID = 'lqZinLXwxPo'  # this video u want to update changed this
 CLIENT_SECRET = 'client_secret.json'  # client_secret coming from google api rename to -> client_secret.json
 CLIENT_SECRET_WITH_TOKEN = 'client_secret_with_token.json'  # nothing to worry about this
 
@@ -22,6 +22,31 @@ app.secret_key = 'sandrocagara'  # this is for creating flask session
 
 def getBuildApiService(credentials):
     return googleapiclient.discovery.build(API_SERVICE, API_VERSION, credentials=credentials)
+
+
+def createBody(title):
+    body = {
+        "id": VIDEO_ID,
+        "snippet": {
+            "categoryId": 10,
+            "defaultLanguage": "en",
+            "title": "Music Taste",
+            "description": """
+                                 Upload Playlist: https://bit.ly/392sDEP
+8D Audio Playlist: https://bit.ly/2vwtuQ2
+Danucd: https://bit.ly/37Seyta
+Old but Gold Playlist: https://bit.ly/3dHQqfp
+Hours Music Playlist: https://bit.ly/2Z0U1RJ
+Subscriber Requested Music: https://bit.ly/3bsQga7
+
+If you need a song removed on my channel, please e-mail me.
+
+WARNING: These videos may cause people with photosensitive epilepsy to convulse in seizures. Viewer discretion is 
+advised.
+        """,
+        },
+    }
+    return body
 
 
 def getPath(filename):
@@ -86,7 +111,7 @@ def authenticate(client_secret):
         googleFlow.redirect_uri = flask.url_for('callback', _external=True)
         authorization_url, state = googleFlow.authorization_url(access_type='offline', include_granted_scopes='true')
         flask.session['state'] = state
-    except sys.exc_info()[0] as e:
+    except sys.exc_info()[0] as err:
         return '/error'
     return authorization_url
 
@@ -102,28 +127,7 @@ def titleUpdate():
         youtube = getBuildApiService(credentials)
         title = getVideoTitleWithViews(credentials)
 
-        requests = youtube.videos().update(
-            part="snippet",
-            body={
-                "id": VIDEO_ID,
-                "snippet": {
-                    "categoryId": 10,
-                    "defaultLanguage": "en",
-                    "title": "Music Taste",
-                    "description": """
-                             Upload Playlist: https://bit.ly/392sDEP
-8D Audio Playlist: https://bit.ly/2vwtuQ2
-Danucd: https://bit.ly/37Seyta
-Old but Gold Playlist: https://bit.ly/3dHQqfp
-Hours Music Playlist: https://bit.ly/2Z0U1RJ
-Subscriber Requested Music: https://bit.ly/3bsQga7
-
-If you need a song removed on my channel, please e-mail me.
-
-WARNING: These videos may cause people with photosensitive epilepsy to convulse in seizures. Viewer discretion is advised.
-    """,
-                },
-            })
+        requests = youtube.videos().update(part="snippet", body=createBody(title))
 
         response = requests.execute()
         print(response)
