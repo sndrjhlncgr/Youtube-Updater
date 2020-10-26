@@ -1,10 +1,11 @@
-import sys
-
-import flask, os, json
-from flask import Flask, request, session
+import flask
+import google
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
-import google
+import json
+import os
+import sys
+from flask import Flask, session
 
 API_SERVICE = 'youtube'
 API_VERSION = 'v3'
@@ -13,6 +14,7 @@ YOUTUBE_SSL = ['https://www.googleapis.com/auth/youtube.force-ssl']
 
 VIDEO_ID = 'lqZinLXwxPo'  # this video u want to update
 CLIENT_SECRET = 'client_secret.json'  # client_secret coming from google api
+CLIENT_SECRET_WITH_TOKEN = 'client_secret_with_token.json'
 
 app = Flask(__name__)
 app.secret_key = 'sandrocagara'  # this is for creating session
@@ -25,7 +27,7 @@ def getBuildApiService(credentials):
     return googleapiclient.discovery.build(API_SERVICE, API_VERSION, credentials=credentials)
 
 
-def getClientSecretPath(filename):
+def getPath(filename):
     try:
         file = open('clients/' + filename)
         path = os.path.realpath(file.name)
@@ -36,7 +38,14 @@ def getClientSecretPath(filename):
     return path
 
 
+def createFileCredentials(filename, credentials):
+    createCredentials = open(filename, 'w')
+    createCredentials.write(json.dumps(credentials))
+    createCredentials.close()
+
+
 def storeCredentials(credentials):
+    client_secret_with_token = getPath(CLIENT_SECRET_WITH_TOKEN)
     store_credentials = {
         'web': {
             'token': credentials.token,
@@ -50,17 +59,7 @@ def storeCredentials(credentials):
         }
     }
 
-    wr = open('clients/client_secret_with_token.json', 'w')
-    wr.write(json.dumps(store_credentials))
-    wr.close()
-
-
-def authenticate(client_secret):
-    googleFlow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(client_secret, YOUTUBE_SSL)
-    googleFlow.redirect_uri = flask.url_for('callback', _external=True)
-    authorization_url, state = googleFlow.authorization_url(access_type='offline', include_granted_scopes='true')
-    flask.session['state'] = state
-    return authorization_url
+    createFileCredentials(client_secret_with_token, store_credentials)
 
 
 def getVideoStatistics(credentials):
@@ -84,13 +83,27 @@ def getClientSecretWithToken():
     return credentials["web"]
 
 
+def authenticate(client_secret):
+    try:
+        googleFlow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(client_secret, YOUTUBE_SSL)
+        googleFlow.redirect_uri = flask.url_for('callback', _external=True)
+        authorization_url, state = googleFlow.authorization_url(access_type='offline', include_granted_scopes='true')
+        flask.session['state'] = state
+    except sys.exc_info()[0] as e:
+        return '/error'
+    return authorization_url
+
+
 @app.route('/title/update')
 def titleUpdate():
     try:
         credentials_with_token = getClientSecretWithToken()
-        credential = google.oauth2.credentials.Credentials(**credentials_with_token)
-        youtube = getBuildApiService(credential)
-        title = getVideoTitleWithViews(credential)
+        credentials = google.oauth2.credentials.Credentials(**credentials_with_token)
+        if credentials.expired:
+            print('TOKEN EXPIRED')
+            return 'TOKEN EXPIRED'
+        youtube = getBuildApiService(credentials)
+        title = getVideoTitleWithViews(credentials)
 
         requests = youtube.videos().update(
             part="snippet",
@@ -102,16 +115,16 @@ def titleUpdate():
                     "title": "Music Taste",
                     "description": """
                              Upload Playlist: https://bit.ly/392sDEP
-         8D Audio Playlist: https://bit.ly/2vwtuQ2
-         Danucd: https://bit.ly/37Seyta
-         Old but Gold Playlist: https://bit.ly/3dHQqfp
-         Hours Music Playlist: https://bit.ly/2Z0U1RJ
-         Subscriber Requested Music: https://bit.ly/3bsQga7
+8D Audio Playlist: https://bit.ly/2vwtuQ2
+Danucd: https://bit.ly/37Seyta
+Old but Gold Playlist: https://bit.ly/3dHQqfp
+Hours Music Playlist: https://bit.ly/2Z0U1RJ
+Subscriber Requested Music: https://bit.ly/3bsQga7
 
-         If you need a song removed on my channel, please e-mail me.
+If you need a song removed on my channel, please e-mail me.
 
-         WARNING: These videos may cause people with photosensitive epilepsy to convulse in seizures. Viewer discretion is advised.
-                         """,
+WARNING: These videos may cause people with photosensitive epilepsy to convulse in seizures. Viewer discretion is advised.
+    """,
                 },
             })
 
@@ -126,9 +139,9 @@ def titleUpdate():
 @app.route('/callback')
 def callback():
     state = flask.session['state']
-    client_secret = getClientSecretPath('client_secret_with_token.json')
+    client_secret = getPath(CLIENT_SECRET_WITH_TOKEN)
     if not client_secret:
-        return 'CREDENTIALS NOT STORED'
+        return 'CREDENTIALS NOT FOUND'
 
     googleFlow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(client_secret, scopes=YOUTUBE_SSL, state=state)
     googleFlow.redirect_uri = flask.url_for('callback', _external=True)  # where came from link
@@ -136,32 +149,26 @@ def callback():
     googleFlow.fetch_token(authorization_response=response)
 
     credentials = googleFlow.credentials
-    # Returns credentials from the OAuth 2.0 session.
-    # Returns: The constructed credentials.
     # Return type: https://google-auth.readthedocs.io/en/stable/reference/google.oauth2.credentials.html
-    # Raises: ValueError – If there is no access token in the session.
     storeCredentials(credentials)
     return flask.redirect('/title/update')
 
 
 @app.route('/authenticate')
 def auth():
-    default_client_secret = getClientSecretPath(CLIENT_SECRET)
+    client_secret, client_secret_with_token = getPath(CLIENT_SECRET), getPath(CLIENT_SECRET_WITH_TOKEN)
     credentials = {}
     try:
-        with open('clients/client_secret_with_token.json') as file:
+        with open(client_secret_with_token) as file:
             credentials = json.load(file)
     except FileNotFoundError as err:
-        with open(default_client_secret) as file:
+        with open(client_secret) as file:
             credentials = json.load(file)
 
-        wr = open('clients/client_secret_with_token.json', 'w')
-        wr.write(json.dumps(credentials))
-        wr.close()
+        createFileCredentials(client_secret_with_token, credentials)
     finally:
         if 'token' not in credentials['web']:
-            print(credentials)
-            authorization_url = authenticate('clients/client_secret_with_token.json')
+            authorization_url = authenticate(client_secret_with_token)
             return flask.redirect(authorization_url)
 
     return flask.redirect('/title/update')
@@ -171,6 +178,11 @@ def auth():
 def main():
     print('APP STARTED')
     return 'd'
+
+
+@app.route('/error')
+def error():
+    return 'SOMETHING WENT WRONG'
 
 
 if __name__ == '__main__':
