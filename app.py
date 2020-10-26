@@ -27,7 +27,7 @@ def getBuildApiService(credentials):
 
 def getClientSecretPath(filename):
     try:
-        file = open('clients/'+filename)
+        file = open('clients/' + filename)
         path = os.path.realpath(file.name)
         file.close()
     except sys.exc_info()[0] as e:
@@ -37,21 +37,22 @@ def getClientSecretPath(filename):
 
 
 def storeCredentials(credentials):
-    if credentials:
-        flask.session['credentials'] = {}
-
-    get_credentials = {
-        'token': credentials.token,
-        'refresh_token': credentials.refresh_token,
-        'id_token': credentials.id_token,
-        'token_uri': credentials.token_uri,
-        'client_id': credentials.client_id,
-        'client_secret': credentials.client_secret,
-        'scopes': credentials.scopes,
-        'quota_project_id': credentials.quota_project_id
-
+    store_credentials = {
+        'web': {
+            'token': credentials.token,
+            'refresh_token': credentials.refresh_token,
+            'id_token': credentials.id_token,
+            'token_uri': credentials.token_uri,
+            'client_id': credentials.client_id,
+            'client_secret': credentials.client_secret,
+            'scopes': credentials.scopes,
+            'quota_project_id': credentials.quota_project_id
+        }
     }
-    flask.session['credentials'] = json.dumps(get_credentials)
+
+    wr = open('clients/client_secret_with_token.json', 'w')
+    wr.write(json.dumps(store_credentials))
+    wr.close()
 
 
 def authenticate(client_secret):
@@ -76,11 +77,18 @@ def getVideoTitleWithViews(credentials):
     return title
 
 
+def getClientSecretWithToken():
+    with open('clients/client_secret_with_token.json') as file:
+        credentials = json.load(file)
+
+    return credentials["web"]
+
+
 @app.route('/title/update')
 def titleUpdate():
     try:
-        credentials = json.loads(flask.session['credentials'])
-        credential = google.oauth2.credentials.Credentials(**credentials)
+        credentials_with_token = getClientSecretWithToken()
+        credential = google.oauth2.credentials.Credentials(**credentials_with_token)
         youtube = getBuildApiService(credential)
         title = getVideoTitleWithViews(credential)
 
@@ -118,7 +126,7 @@ def titleUpdate():
 @app.route('/callback')
 def callback():
     state = flask.session['state']
-    client_secret = getClientSecretPath('client_secret.json')
+    client_secret = getClientSecretPath('client_secret_with_token.json')
     if not client_secret:
         return 'CREDENTIALS NOT STORED'
 
@@ -133,18 +141,30 @@ def callback():
     # Return type: https://google-auth.readthedocs.io/en/stable/reference/google.oauth2.credentials.html
     # Raises: ValueError – If there is no access token in the session.
     storeCredentials(credentials)
-    # print(flask.session['credentials'])
     return flask.redirect('/title/update')
 
 
 @app.route('/authenticate')
 def auth():
-    client_secret = getClientSecretPath(CLIENT_SECRET)
-    # print(client_secret)
-    if not client_secret:
-        return None
-    authorization_url = authenticate(client_secret)
-    return flask.redirect(authorization_url)
+    default_client_secret = getClientSecretPath(CLIENT_SECRET)
+    credentials = {}
+    try:
+        with open('clients/client_secret_with_token.json') as file:
+            credentials = json.load(file)
+    except FileNotFoundError as err:
+        with open(default_client_secret) as file:
+            credentials = json.load(file)
+
+        wr = open('clients/client_secret_with_token.json', 'w')
+        wr.write(json.dumps(credentials))
+        wr.close()
+    finally:
+        if 'token' not in credentials['web']:
+            print(credentials)
+            authorization_url = authenticate('clients/client_secret_with_token.json')
+            return flask.redirect(authorization_url)
+
+    return flask.redirect('/title/update')
 
 
 @app.route('/')
