@@ -6,18 +6,18 @@ import os
 import sys
 from flask import Flask, session
 from Utils import helpers
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv())
 
-API_SERVICE = 'youtube'
-API_VERSION = 'v3'
-
-YOUTUBE_SSL = ['https://www.googleapis.com/auth/youtube.force-ssl']
-
-VIDEO_ID = 'lqZinLXwxPo'  # this video u want to update changed this
-CLIENT_SECRET = 'client_secret.json'  # client_secret coming from google api rename to -> client_secret.json
-CLIENT_SECRET_WITH_TOKEN = 'client_secret_with_token.json'  # nothing to worry about this
+API_SERVICE = os.getenv("API_SERVICE")
+API_VERSION = os.getenv("API_VERSION")
+YOUTUBE_SSL = os.getenv("YOUTUBE_SSL")
+CLIENT_SECRET = os.getenv("CLIENT_SECRET")
+CLIENT_SECRET_WITH_TOKEN = os.getenv("CLIENT_SECRET_WITH_TOKEN")
+VIDEO_ID = os.getenv("VIDEO_ID")
 
 app = Flask(__name__)
-app.secret_key = 'sandrocagara'  # this is for creating flask session
+app.secret_key = os.getenv("FLASK_SESSION_SECRET_KEY")
 
 
 def createBody(title):
