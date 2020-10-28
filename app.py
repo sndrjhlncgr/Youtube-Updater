@@ -32,7 +32,7 @@ def createBody(title):
 8D Audio Playlist: https://bit.ly/2vwtuQ2
 Danucd: https://bit.ly/37Seyta
 Old but Gold Playlist: https://bit.ly/3dHQqfp
-Hours Music Playlist: https://bit.ly/2Z0U1RJ
+Hours Music Playlist: https://bit.ly/2Z0U1RJ    
 Subscriber Requested Music: https://bit.ly/3bsQga7
 
 If you need a song removed on my channel, please e-mail me.
@@ -111,5 +111,5 @@ def error():
 
 if __name__ == '__main__':
     os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-    app.run()
+    app.run(debug=True)
     session.permanent = True

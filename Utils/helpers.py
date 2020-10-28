@@ -1,7 +1,7 @@
 import json
 import os
 import sys
-
+import urllib.request
 import flask
 import google_auth_oauthlib
 import googleapiclient.discovery
@@ -33,6 +33,17 @@ def getPath(filename):
     return path
 
 
+def getImagePath(filename):
+    try:
+        file = open('images/' + filename, 'r+')
+        path = os.path.normpath(file.name)
+        file.close()
+    except sys.exc_info()[0] as e:
+        print('Error Message: ', e)
+        return None
+    return path
+
+
 def createFileCredentials(filename, credentials):
     createCredentials = open(filename, 'w')
     createCredentials.write(json.dumps(credentials))
@@ -56,8 +67,37 @@ def storeCredentials(credentials, filename):
     createFileCredentials(client_secret_with_token, store_credentials)
 
 
+# def test(youtube, video_id):
+#     file = urllib.request.urlretrieve(
+#         "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/items/237740/5c553a2a47dbe0b7ac3e23ef94ff1db31adeccca.jpg",
+#         "images/example-thumbnail.jpg")
+#     test = youtube.thumbnails().set(
+#         videoId=video_id,
+#         media_body=getImagePath("example-thumbnail.jpg")
+#     )
+#     print(test.execute())
+
+
 def getVideoStatistics(credentials, api_service, api_version, video_id):
     youtube = getBuildApiService(credentials, api_service, api_version)
+    # test(youtube, video_id)
+    # test = youtube.videos().list(part="statistics", id=video_id)
+    # print(test.execute())
+    # part choices:
+    #     contentDetails
+    #     fileDetails
+    #     id
+    #     liveStreamingDetails
+    #     localizations
+    #     player
+    #     processingDetails
+    #     recordingDetails
+    #     snippet
+    #     statistics
+    #     status
+    #     suggestions
+    #     topicDetails
+
     requests = youtube.videos().list(part="statistics", id=video_id)
     response = requests.execute()
     return response
