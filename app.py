@@ -4,8 +4,8 @@ import google_auth_oauthlib.flow
 import json
 import os
 import sys
-from flask import Flask, session
-from Utils import helpers
+from flask import Flask, session, request
+from helpers import helpers
 from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
@@ -64,14 +64,19 @@ def thumbnailUpdate():
 
 @app.route('/title/update')
 def titleUpdate():
+    withViews = request.args.get('withViews', default='', type=str)
+    title = None
     try:
         credentials_with_token = helpers.getClientSecretWithToken(CLIENT_SECRET_WITH_TOKEN)
         credentials = google.oauth2.credentials.Credentials(**credentials_with_token)
         if credentials.expired:
             return 'TOKEN EXPIRED'
+
+        if withViews == 'true':
+            title = helpers.getVideoTitleWithViews(credentials, API_SERVICE, API_VERSION, VIDEO_ID)
+
         youtube = helpers.getBuildApiService(credentials, API_SERVICE, API_VERSION)
-        title = helpers.getVideoTitleWithViews(credentials, API_SERVICE, API_VERSION, VIDEO_ID)
-        requests = youtube.videos().update(part="snippet", body=createBody())
+        requests = youtube.videos().update(part="snippet", body=createBody(title))
         response = requests.execute()
         # print(response)
     except sys.exc_info()[0] as e:
@@ -120,7 +125,7 @@ def main():
     return 'd'
 
 
-@app.route('/error')
+@app.route('/errors')
 def error():
     return 'SOMETHING WENT WRONG'
 

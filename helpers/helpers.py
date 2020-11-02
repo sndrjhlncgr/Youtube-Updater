@@ -1,7 +1,6 @@
 import json
 import os
 import sys
-import urllib.request
 import flask
 import google_auth_oauthlib
 import googleapiclient.discovery
