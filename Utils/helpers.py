@@ -33,6 +33,17 @@ def getPath(filename):
     return path
 
 
+def getBodyPath(filename):
+    try:
+        file = open('info/' + filename, 'r+')
+        path = os.path.normpath(file.name)
+        file.close()
+    except sys.exc_info()[0] as e:
+        print('Error Message: ', e)
+        return None
+    return path
+
+
 def getImagePath(filename):
     try:
         file = open('images/' + filename, 'r+')
