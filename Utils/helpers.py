@@ -35,7 +35,7 @@ def getPath(filename):
 
 def getBodyPath(filename):
     try:
-        file = open('info/' + filename, 'r+')
+        file = open('body/' + filename, 'r+')
         path = os.path.normpath(file.name)
         file.close()
     except sys.exc_info()[0] as e:
@@ -46,7 +46,7 @@ def getBodyPath(filename):
 
 def getImagePath(filename):
     try:
-        file = open('images/' + filename, 'r+')
+        file = open('thumbnail/' + filename, 'r+')
         path = os.path.normpath(file.name)
         file.close()
     except sys.exc_info()[0] as e:

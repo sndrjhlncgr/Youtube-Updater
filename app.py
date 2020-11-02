@@ -68,7 +68,6 @@ def titleUpdate():
         credentials_with_token = helpers.getClientSecretWithToken(CLIENT_SECRET_WITH_TOKEN)
         credentials = google.oauth2.credentials.Credentials(**credentials_with_token)
         if credentials.expired:
-            # print('TOKEN EXPIRED')
             return 'TOKEN EXPIRED'
         youtube = helpers.getBuildApiService(credentials, API_SERVICE, API_VERSION)
         title = helpers.getVideoTitleWithViews(credentials, API_SERVICE, API_VERSION, VIDEO_ID)
