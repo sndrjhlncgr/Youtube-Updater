@@ -62,7 +62,7 @@ def thumbnailUpdate():
     return 'YOUTUBE THUMBNAIL UPDATED'
 
 
-@app.route('/title/update')
+@app.route('/title/update/')
 def titleUpdate():
     withViews = request.args.get('withViews', default='', type=str)
     title = None
@@ -76,7 +76,7 @@ def titleUpdate():
             title = helpers.getVideoTitleWithViews(credentials, API_SERVICE, API_VERSION, VIDEO_ID)
 
         youtube = helpers.getBuildApiService(credentials, API_SERVICE, API_VERSION)
-        requests = youtube.videos().update(part="snippet", body=createBody(title))
+        requests = youtube.videos().update(part="snippet", body=createBody())
         response = requests.execute()
         # print(response)
     except sys.exc_info()[0] as e:
