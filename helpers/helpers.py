@@ -21,31 +21,9 @@ def authenticate(client_secret_with_token, youtube_ssl):
     return authorization_url
 
 
-def getPath(filename):
+def getFilePath(folder, filename):
     try:
-        file = open('clients/' + filename, 'r+')
-        path = os.path.normpath(file.name)
-        file.close()
-    except sys.exc_info()[0] as e:
-        print('Error Message: ', e)
-        return None
-    return path
-
-
-def getBodyPath(filename):
-    try:
-        file = open('title/' + filename, 'r+')
-        path = os.path.normpath(file.name)
-        file.close()
-    except sys.exc_info()[0] as e:
-        print('Error Message: ', e)
-        return None
-    return path
-
-
-def getImagePath(filename):
-    try:
-        file = open('thumbnail/' + filename, 'r+')
+        file = open(folder + '/' + filename, 'r+')
         path = os.path.normpath(file.name)
         file.close()
     except sys.exc_info()[0] as e:
@@ -61,7 +39,7 @@ def createFileCredentials(filename, credentials):
 
 
 def storeCredentials(credentials, filename):
-    client_secret_with_token = getPath(filename)
+    client_secret_with_token = getFilePath('clients', filename)
     store_credentials = {
         'web': {
             'token': credentials.token,
@@ -77,37 +55,8 @@ def storeCredentials(credentials, filename):
     createFileCredentials(client_secret_with_token, store_credentials)
 
 
-# def test(youtube, video_id):
-#     file = urllib.request.urlretrieve(
-#         "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/items/237740/5c553a2a47dbe0b7ac3e23ef94ff1db31adeccca.jpg",
-#         "images/example-thumbnail.jpg")
-#     test = youtube.thumbnails().set(
-#         videoId=video_id,
-#         media_body=getImagePath("thumbnail.jpg")
-#     )
-#     print(test.execute())
-
-
 def getVideoStatistics(credentials, api_service, api_version, video_id):
     youtube = getBuildApiService(credentials, api_service, api_version)
-    # test(youtube, video_id)
-    # test = youtube.videos().list(part="statistics", id=video_id)
-    # print(test.execute())
-    # part choices:
-    #     contentDetails
-    #     fileDetails
-    #     id
-    #     liveStreamingDetails
-    #     localizations
-    #     player
-    #     processingDetails
-    #     recordingDetails
-    #     snippet
-    #     statistics
-    #     status
-    #     suggestions
-    #     topicDetails
-
     requests = youtube.videos().list(part="statistics", id=video_id)
     response = requests.execute()
     return response
@@ -115,12 +64,12 @@ def getVideoStatistics(credentials, api_service, api_version, video_id):
 
 def getVideoTitleWithViews(credentials, api_service, api_version, video_id):
     videoInfo = getVideoStatistics(credentials, api_service, api_version, video_id)
-    title = "Music Taste has {} Views for this video.".format(str(videoInfo["items"][0]["statistics"]["viewCount"]))
+    title = "This Video Has {} Views".format(str(videoInfo["items"][0]["statistics"]["viewCount"]))
     return title
 
 
 def getClientSecretWithToken(filename):
-    client_secret_with_token = getPath(filename)
+    client_secret_with_token = getFilePath('clients', filename)
     with open(client_secret_with_token) as file:
         credentials = json.load(file)
     return credentials["web"]

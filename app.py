@@ -22,7 +22,7 @@ app.secret_key = os.getenv("FLASK_SESSION_SECRET_KEY")
 
 
 def createBody(title=None):
-    body = helpers.getBodyPath('body.json')
+    body = helpers.getFilePath('title', 'body.json')
 
     with open(body) as file:
         data = json.load(file)
@@ -56,7 +56,7 @@ def thumbnailUpdate():
     youtube = helpers.getBuildApiService(credentials, API_SERVICE, API_VERSION)
     requests = youtube.thumbnails().set(
         videoId=VIDEO_ID,
-        media_body=helpers.getImagePath("thumbnail.jpg")
+        media_body=helpers.getFilePath('thumbnail', "thumbnail.jpg")
     )
     print(requests.execute())
     return 'YOUTUBE THUMBNAIL UPDATED'
@@ -76,7 +76,7 @@ def titleUpdate():
             title = helpers.getVideoTitleWithViews(credentials, API_SERVICE, API_VERSION, VIDEO_ID)
 
         youtube = helpers.getBuildApiService(credentials, API_SERVICE, API_VERSION)
-        requests = youtube.videos().update(part="snippet", body=createBody())
+        requests = youtube.videos().update(part="snippet", body=createBody(title))
         response = requests.execute()
         # print(response)
     except sys.exc_info()[0] as e:
@@ -87,7 +87,7 @@ def titleUpdate():
 @app.route('/callback')
 def callback():
     state = flask.session['state']
-    client_secret = helpers.getPath(CLIENT_SECRET_WITH_TOKEN)
+    client_secret = helpers.getFilePath('clients', CLIENT_SECRET_WITH_TOKEN)
     response = flask.request.url
     if not client_secret:
         return 'CREDENTIALS NOT FOUND'
@@ -103,7 +103,8 @@ def callback():
 
 @app.route('/authenticate')
 def auth():
-    client_secret, client_secret_with_token = helpers.getPath(CLIENT_SECRET), helpers.getPath(CLIENT_SECRET_WITH_TOKEN)
+    client_secret, client_secret_with_token = helpers.getFilePath('clients', CLIENT_SECRET), helpers.getFilePath(
+        'clients', CLIENT_SECRET_WITH_TOKEN)
     credentials = {}
     try:
         with open(client_secret_with_token) as file:
@@ -114,7 +115,7 @@ def auth():
         helpers.createFileCredentials(client_secret_with_token, credentials)
     finally:
         if 'token' not in credentials['web']:
-            authorization_url = helpers.authenticate(client_secret_with_token, YOUTUBE_SSL)
+            authorization_url = helpers.authenticate(client_secret_with_token, [YOUTUBE_SSL])
             return flask.redirect(authorization_url)
     return flask.redirect('/title/update')
 
