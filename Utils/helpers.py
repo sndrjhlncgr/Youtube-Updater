@@ -84,7 +84,7 @@ def storeCredentials(credentials, filename):
 #         "images/example-thumbnail.jpg")
 #     test = youtube.thumbnails().set(
 #         videoId=video_id,
-#         media_body=getImagePath("example-thumbnail.jpg")
+#         media_body=getImagePath("thumbnail.jpg")
 #     )
 #     print(test.execute())
 

@@ -47,6 +47,21 @@ def createBody(title=None):
     return body
 
 
+@app.route('/thumbnail/update')
+def thumbnailUpdate():
+    credentials_with_token = helpers.getClientSecretWithToken(CLIENT_SECRET_WITH_TOKEN)
+    credentials = google.oauth2.credentials.Credentials(**credentials_with_token)
+    if credentials.expired:
+        return 'TOKEN EXPIRED'
+    youtube = helpers.getBuildApiService(credentials, API_SERVICE, API_VERSION)
+    requests = youtube.thumbnails().set(
+        videoId=VIDEO_ID,
+        media_body=helpers.getImagePath("thumbnail.jpg")
+    )
+    print(requests.execute())
+    return 'YOUTUBE THUMBNAIL UPDATED'
+
+
 @app.route('/title/update')
 def titleUpdate():
     try:
