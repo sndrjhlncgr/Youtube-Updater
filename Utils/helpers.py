@@ -35,7 +35,7 @@ def getPath(filename):
 
 def getBodyPath(filename):
     try:
-        file = open('body/' + filename, 'r+')
+        file = open('title/' + filename, 'r+')
         path = os.path.normpath(file.name)
         file.close()
     except sys.exc_info()[0] as e:
